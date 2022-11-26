@@ -33,10 +33,9 @@ static uint32_t MemoryStress_GenRandNumWithSeed(uint32_t max, uint32_t* seed)
     return x % max;
 }
 
-static uint32_t MemoryStress_GenRandNum(uint32_t max)
+static uint32_t MemoryStress_GenRandNum(MemoryStress_Context_t* context, uint32_t max)
 {
-    static uint32_t a = 0x114514; /*Seed*/
-    return MemoryStress_GenRandNumWithSeed(max, &a);
+    return MemoryStress_GenRandNumWithSeed(max, &context->config.seed);
 }
 
 void MemoryStress_Init(MemoryStress_Context_t* context, const MemoryStress_Config_t* config)
@@ -63,13 +62,13 @@ void MemoryStress_GetError(MemoryStress_Context_t* context, MemoryStress_Error_t
 bool MemoryStress_Run(MemoryStress_Context_t* context)
 {
     /* find ramdom node */
-    size_t index = MemoryStress_GenRandNum(context->config.nodeLen);
+    size_t index = MemoryStress_GenRandNum(context, context->config.nodeLen);
     MemoryStress_Node_t* node = &(context->nodeArray[index]);
 
     /* check state */
     if (!node->buf) {
         /* generate ramdom size */
-        size_t size = MemoryStress_GenRandNum(context->config.maxAllocSize);
+        size_t size = MemoryStress_GenRandNum(context, context->config.maxAllocSize);
 
         /* try alloc memory */
         uint8_t* ptr = context->config.mallocFunc(size);

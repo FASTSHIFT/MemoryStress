@@ -37,6 +37,7 @@ typedef struct
     void (*freeFunc)(void* ptr);
     size_t maxAllocSize;
     size_t nodeLen;
+    uint32_t seed;
 } MemoryStress_Config_t;
 
 typedef struct

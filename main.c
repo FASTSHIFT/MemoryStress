@@ -47,6 +47,7 @@ int main(int argc, const char* argv[])
     config.freeFunc = my_free;
     config.maxAllocSize = 1024;
     config.nodeLen = 1024;
+    config.seed = 0x114514;
 
     MemoryStress_Context_t context;
     MemoryStress_Init(&context, &config);
