@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 static void* my_malloc(size_t size)
 {
@@ -40,18 +41,24 @@ static void my_free(void* ptr)
 
 int main(int argc, const char* argv[])
 {
-    MemoryStress_Config config;
+    MemoryStress_Config_t config;
     memset(&config, 0, sizeof(config));
     config.mallocFunc = my_malloc;
     config.freeFunc = my_free;
     config.maxAllocSize = 1024;
     config.nodeLen = 1024;
 
-    MemoryStress_Error_t error;
+    MemoryStress_Context_t context;
+    MemoryStress_Init(&context, &config);
 
     printf("MemoryStress: testing...\n");
 
-    MemoryStress_Run(&config, &error);
+    while (MemoryStress_Run(&context)) {
+        usleep(1);
+    }
+
+    MemoryStress_Error_t error;
+    MemoryStress_GetError(&context, &error);
 
     printf("MemoryStress: test faild!, "
            "buf = %p, "
@@ -66,6 +73,8 @@ int main(int argc, const char* argv[])
         error.cnt,
         error.readValue,
         error.realValue);
+
+    MemoryStress_Deinit(&context);
 
     return 0;
 }

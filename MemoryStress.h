@@ -23,8 +23,9 @@
 #ifndef __MEMORY_STRESS_H
 #define __MEMORY_STRESS_H
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +37,7 @@ typedef struct
     void (*freeFunc)(void* ptr);
     size_t maxAllocSize;
     size_t nodeLen;
-} MemoryStress_Config;
+} MemoryStress_Config_t;
 
 typedef struct
 {
@@ -48,7 +49,26 @@ typedef struct
     uint8_t realValue;
 } MemoryStress_Error_t;
 
-void MemoryStress_Run(const MemoryStress_Config* config, MemoryStress_Error_t* error);
+typedef struct
+{
+    uint8_t* buf;
+    size_t size;
+} MemoryStress_Node_t;
+
+typedef struct
+{
+    MemoryStress_Node_t* nodeArray;
+    MemoryStress_Config_t config;
+    MemoryStress_Error_t error;
+} MemoryStress_Context_t;
+
+void MemoryStress_Init(MemoryStress_Context_t* context, const MemoryStress_Config_t* config);
+
+void MemoryStress_Deinit(MemoryStress_Context_t* context);
+
+void MemoryStress_GetError(MemoryStress_Context_t* context, MemoryStress_Error_t* error);
+
+bool MemoryStress_Run(MemoryStress_Context_t* context);
 
 #ifdef __cplusplus
 }

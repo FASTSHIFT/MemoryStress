@@ -23,12 +23,6 @@
 #include "MemoryStress.h"
 #include <string.h>
 
-typedef struct
-{
-    uint8_t* buf;
-    size_t size;
-} MemoryStress_Node_t;
-
 static uint32_t MemoryStress_GenRandNumWithSeed(uint32_t max, uint32_t* seed)
 {
     uint32_t x = *seed;
@@ -45,73 +39,84 @@ static uint32_t MemoryStress_GenRandNum(uint32_t max)
     return MemoryStress_GenRandNumWithSeed(max, &a);
 }
 
-void MemoryStress_Run(const MemoryStress_Config* config, MemoryStress_Error_t* error)
+void MemoryStress_Init(MemoryStress_Context_t* context, const MemoryStress_Config_t* config)
 {
+    memset(context, 0, sizeof(MemoryStress_Context_t));
+    context->config = *config;
+
     /* init node array */
-    MemoryStress_Node_t* nodeArray = config->mallocFunc(config->nodeLen * sizeof(MemoryStress_Node_t));
-    memset(nodeArray, 0, config->nodeLen * sizeof(MemoryStress_Node_t));
-    memset(error, 0, sizeof(MemoryStress_Error_t));
-    uint32_t cnt = 0;
+    context->nodeArray = config->mallocFunc(config->nodeLen * sizeof(MemoryStress_Node_t));
+    memset(context->nodeArray, 0, config->nodeLen * sizeof(MemoryStress_Node_t));
+}
 
-    /* run test */
-    while (1) {
+void MemoryStress_Deinit(MemoryStress_Context_t* context)
+{
+    /* free node array */
+    context->config.freeFunc(context->nodeArray);
+}
 
-        /* find ramdom node */
-        size_t index = MemoryStress_GenRandNum(config->nodeLen);
-        MemoryStress_Node_t* node = &nodeArray[index];
+void MemoryStress_GetError(MemoryStress_Context_t* context, MemoryStress_Error_t* error)
+{
+    *error = context->error;
+}
 
-        /* check state */
-        if (!node->buf) {
-            /* generate ramdom size */
-            size_t size = MemoryStress_GenRandNum(config->maxAllocSize);
+bool MemoryStress_Run(MemoryStress_Context_t* context)
+{
+    /* find ramdom node */
+    size_t index = MemoryStress_GenRandNum(context->config.nodeLen);
+    MemoryStress_Node_t* node = &(context->nodeArray[index]);
 
-            /* try alloc memory */
-            uint8_t* ptr = config->mallocFunc(size);
+    /* check state */
+    if (!node->buf) {
+        /* generate ramdom size */
+        size_t size = MemoryStress_GenRandNum(context->config.maxAllocSize);
 
-            /* if alloc failed, continue */
-            if (!ptr) {
-                continue;
-            }
+        /* try alloc memory */
+        uint8_t* ptr = context->config.mallocFunc(size);
 
-            /* record node */
-            node->buf = ptr;
-            node->size = size;
+        /* if alloc failed, continue */
+        if (!ptr) {
+            return true;
+        }
 
-            /* fill random data */
-            uint32_t seed = size;
-            while (size--) {
-                *ptr++ = MemoryStress_GenRandNumWithSeed(UINT8_MAX, &seed);
-            }
-        } else {
-            uint32_t size = node->size;
-            uint32_t seed = size;
+        /* record node */
+        node->buf = ptr;
+        node->size = size;
 
-            for (size_t i = 0; i < size; i++) {
-                uint8_t realValue = MemoryStress_GenRandNumWithSeed(UINT8_MAX, &seed);
-                uint8_t readValue = node->buf[i];
-                if (readValue != realValue) {
-                    error->buf = node->buf;
-                    error->size = node->size;
-                    error->offset = i;
-                    error->cnt = cnt;
-                    error->readValue = readValue;
-                    error->realValue = realValue;
-                    break;
-                }
-            }
+        /* fill random data */
+        uint32_t seed = size;
+        while (size--) {
+            *ptr++ = MemoryStress_GenRandNumWithSeed(UINT8_MAX, &seed);
+        }
+    } else {
+        uint32_t size = node->size;
+        uint32_t seed = size;
 
-            /* free buffer */
-            config->freeFunc(node->buf);
-            node->buf = NULL;
+        /* check data */
+        for (size_t i = 0; i < size; i++) {
+            uint8_t realValue = MemoryStress_GenRandNumWithSeed(UINT8_MAX, &seed);
+            uint8_t readValue = node->buf[i];
 
-            if (error->buf) {
-                /* stop test */
+            /* data error */
+            if (readValue != realValue) {
+                context->error.buf = node->buf;
+                context->error.size = node->size;
+                context->error.offset = i;
+                context->error.readValue = readValue;
+                context->error.realValue = realValue;
                 break;
             }
         }
-        cnt++;
-    }
 
-    /* free node array */
-    config->freeFunc(nodeArray);
+        /* free buffer */
+        context->config.freeFunc(node->buf);
+        node->buf = NULL;
+
+        if (context->error.buf) {
+            /* stop test */
+            return false;
+        }
+    }
+    context->error.cnt++;
+    return true;
 }
