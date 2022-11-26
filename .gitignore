@@ -53,3 +53,7 @@ dkms.conf
 
 # VScode
 .vscode/
+
+# Clion
+cmake-*
+.idea
