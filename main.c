@@ -61,19 +61,20 @@ int main(int argc, const char* argv[])
     MemoryStress_Error_t error;
     MemoryStress_GetError(&context, &error);
 
-    printf("MemoryStress: test faild!, "
+    printf("MemoryStress: %s ERROR!, "
            "buf = %p, "
            "size = %zu, "
            "offset = %zu(addr = %p), "
            "cnt = %d, "
            "readValue = 0x%x, "
-           "realValue = 0x%x\n",
+           "writeValue = 0x%x\n",
+        error.rwError == MEMORY_STRESS_READ_ERROR ? "READ" : "WRITE",
         error.buf,
         error.size,
         error.offset, error.buf + error.offset,
         error.cnt,
         error.readValue,
-        error.realValue);
+        error.writeValue);
 
     MemoryStress_Deinit(&context);
 

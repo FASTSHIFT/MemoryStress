@@ -40,6 +40,11 @@ typedef struct
     uint32_t seed;
 } MemoryStress_Config_t;
 
+typedef enum {
+    MEMORY_STRESS_READ_ERROR,
+    MEMORY_STRESS_WRITE_ERROR
+} MemoryStress_ReadWrite_Error_t;
+
 typedef struct
 {
     uint8_t* buf;
@@ -47,7 +52,8 @@ typedef struct
     size_t offset;
     uint32_t cnt;
     uint8_t readValue;
-    uint8_t realValue;
+    uint8_t writeValue;
+    MemoryStress_ReadWrite_Error_t rwError;
 } MemoryStress_Error_t;
 
 typedef struct
@@ -64,11 +70,8 @@ typedef struct
 } MemoryStress_Context_t;
 
 void MemoryStress_Init(MemoryStress_Context_t* context, const MemoryStress_Config_t* config);
-
 void MemoryStress_Deinit(MemoryStress_Context_t* context);
-
 void MemoryStress_GetError(MemoryStress_Context_t* context, MemoryStress_Error_t* error);
-
 bool MemoryStress_Run(MemoryStress_Context_t* context);
 
 #ifdef __cplusplus
